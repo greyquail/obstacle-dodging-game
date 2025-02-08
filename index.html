@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dodge the Falling Objects</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      margin: 0;
+      background-color: #f7f7f7;
+    }
+    .game-container {
+      position: relative;
+      width: 100%;
+      height: 400px;
+      background-color: #fff;
+      border: 2px solid #000;
+      overflow: hidden;
+    }
+    .player {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 40px;
+      height: 40px;
+      background-color: #000;
+    }
+    .obstacle {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 20px;
+      height: 20px;
+      background-color: #ff0000;
+      animation: fall 3s linear infinite;
+    }
+    @keyframes fall {
+      from {
+        top: -20px;
+      }
+      to {
+        top: 400px;
+      }
+    }
+    .score {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      font-size: 20px;
+      font-weight: bold;
+    }
+    .game-over {
+      display: none;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 30px;
+      font-weight: bold;
+      color: red;
+    }
+  </style>
+</head>
+<body>
+  <div class="game-container" id="game">
+    <div class="player" id="player"></div>
+    <div class="score" id="score">Score: 0</div>
+    <div class="game-over" id="gameOver">Game Over</div>
+  </div>
+  <script>
+    const player = document.getElementById('player');
+    const game = document.getElementById('game');
+    const scoreElement = document.getElementById('score');
+    const gameOver = document.getElementById('gameOver');
+
+    let playerPosition = 50; // Percentage (centered)
+    let isGameOver = false;
+    let score = 0;
+
+    // Move player left or right
+    document.addEventListener('keydown', (event) => {
+      if (isGameOver) return;
+
+      if (event.code === 'ArrowLeft' && playerPosition > 0) {
+        playerPosition -= 5;
+      } else if (event.code === 'ArrowRight' && playerPosition < 95) {
+        playerPosition += 5;
+      }
+      player.style.left = playerPosition + '%';
+    });
+
+    // Spawn falling obstacles
+    function spawnObstacle() {
+      const obstacle = document.createElement('div');
+      obstacle.classList.add('obstacle');
+      obstacle.style.left = Math.random() * 95 + '%'; // Random horizontal position
+      game.appendChild(obstacle);
+
+      const fallInterval = setInterval(() => {
+        if (isGameOver) {
+          clearInterval(fallInterval);
+          obstacle.remove();
+          return;
+        }
+
+        const obstacleRect = obstacle.getBoundingClientRect();
+        const playerRect = player.getBoundingClientRect();
+
+        // Check for collision
+        if (
+          obstacleRect.top + obstacleRect.height >= playerRect.top &&
+          obstacleRect.left < playerRect.left + playerRect.width &&
+          obstacleRect.left + obstacleRect.width > playerRect.left
+        ) {
+          endGame();
+          clearInterval(fallInterval);
+          return;
+        }
+
+        // Remove obstacle if it goes out of bounds
+        if (obstacleRect.top >= 400) {
+          clearInterval(fallInterval);
+          obstacle.remove();
+          score++;
+          scoreElement.textContent = 'Score: ' + score;
+        }
+      }, 20);
+    }
+
+    function startGame() {
+      setInterval(() => {
+        if (!isGameOver) {
+          spawnObstacle();
+        }
+      }, 1000);
+    }
+
+    function endGame() {
+      isGameOver = true;
+      gameOver.style.display = 'block';
+    }
+
+    // Restart game
+    document.addEventListener('keydown', (event) => {
+      if (event.code === 'Enter' && isGameOver) {
+        resetGame();
+      }
+    });
+
+    function resetGame() {
+      isGameOver = false;
+      score = 0;
+      scoreElement.textContent = 'Score: 0';
+      gameOver.style.display = 'none';
+    }
+
+    startGame();
+  </script>
+</body>
+</html>
